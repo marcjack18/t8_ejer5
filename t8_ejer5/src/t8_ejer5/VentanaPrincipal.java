@@ -2,15 +2,22 @@ package t8_ejer5;
 
 import java.awt.EventQueue;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import javax.swing.JFrame;
 import javax.swing.JTable;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import javax.swing.JButton;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class VentanaPrincipal {
 
@@ -54,7 +61,7 @@ public class VentanaPrincipal {
 	 */
 	private void initialize() {
 		try {
-			System.out.println();
+			
 		Connection con=ConnectionSingleton.getConnection();
 		frame = new JFrame();
 		frame.setBounds(100, 100, 748, 479);
@@ -71,11 +78,37 @@ public class VentanaPrincipal {
 		model.addColumn("Unidades");
 		
 		table_1 = new JTable(model);
+		table_1.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				TableModel model=table_1.getModel();
+				int index=table_1.getSelectedRow();
+				textFieldCodigo.setText(model.getValueAt(index, 0).toString());
+				textFieldCodigoact.setText(model.getValueAt(index, 0).toString());
+				textFieldCodunidades.setText(model.getValueAt(index, 0).toString());
+				textFieldNombre.setText(model.getValueAt(index, 1).toString());
+				textFieldPrecio.setText(model.getValueAt(index, 2).toString());
+				textFieldUnidades.setText(model.getValueAt(index, 3).toString());
+			}
+		});
 		frame.getContentPane().add(table_1);
 		
 		JScrollPane scrollPane =new JScrollPane(table_1);
 		scrollPane.setBounds(98, 12, 299, 114);
 		frame.getContentPane().add(scrollPane);
+		
+		Statement enseñar=con.createStatement();
+		ResultSet rs_enseñar=enseñar.executeQuery("Select * From producto");
+		Object row[]=new Object[4];
+		
+		while(rs_enseñar.next()) {
+			row[0]=rs_enseñar.getInt("codigo");
+			row[1]=rs_enseñar.getString("nombre");
+			row[2]=rs_enseñar.getInt("precio");
+			row[3]=rs_enseñar.getInt("unidades");
+			model.addRow(row);	
+
+		}
 		
 		JLabel lblAadirProducto = new JLabel("Añadir producto:");
 		lblAadirProducto.setBounds(95, 152, 124, 15);
@@ -109,6 +142,41 @@ public class VentanaPrincipal {
 		frame.getContentPane().add(textFieldUnidades);
 		
 		JButton btnInsertar = new JButton("Insertar");
+		btnInsertar.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				try {
+				String nombre=textFieldNombre.getText();
+				int precio=Integer.parseInt(textFieldPrecio.getText());
+				int unidades=Integer.parseInt(textFieldUnidades.getText());
+				
+				PreparedStatement insertar=con.prepareStatement("Insert into producto (nombre,precio,unidades) VALUES (?,?,?)");
+				insertar.setString(1, nombre);
+				insertar.setInt(2, precio);
+				insertar.setInt(3, unidades);
+				
+				insertar.executeUpdate();
+				JOptionPane.showMessageDialog(frame,"Producto añadido correctamente");
+				
+				Statement enseñar=con.createStatement();
+				ResultSet rs_enseñar=enseñar.executeQuery("Select * From producto");
+				Object row[]=new Object[4];
+				model.setRowCount(0);
+				while(rs_enseñar.next()) {
+					row[0]=rs_enseñar.getInt("codigo");
+					row[1]=rs_enseñar.getString("nombre");
+					row[2]=rs_enseñar.getInt("precio");
+					row[3]=rs_enseñar.getInt("unidades");
+					model.addRow(row);	
+
+				}
+				
+				
+			}catch(SQLException e1) {
+				e1.printStackTrace();
+			}
+			}
+		});
 		btnInsertar.setBounds(174, 235, 117, 25);
 		frame.getContentPane().add(btnInsertar);
 		
@@ -121,11 +189,40 @@ public class VentanaPrincipal {
 		frame.getContentPane().add(lblCdigo);
 		
 		textFieldCodigo = new JTextField();
+		textFieldCodigo.setEditable(false);
 		textFieldCodigo.setBounds(174, 322, 45, 19);
 		frame.getContentPane().add(textFieldCodigo);
 		textFieldCodigo.setColumns(10);
 		
 		JButton btnBorrar = new JButton("Borrar");
+		btnBorrar.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				try {
+					int codigo=Integer.parseInt(textFieldCodigo.getText());
+					PreparedStatement borrar=con.prepareStatement("DELETE from producto where codigo = ?");
+					borrar.setInt(1, codigo);
+					borrar.executeUpdate();
+					JOptionPane.showMessageDialog(frame,"Producto borrado correctamente");
+					Statement enseñar=con.createStatement();
+					ResultSet rs_enseñar=enseñar.executeQuery("Select * From producto");
+					Object row[]=new Object[4];
+					model.setRowCount(0);
+					while(rs_enseñar.next()) {
+						row[0]=rs_enseñar.getInt("codigo");
+						row[1]=rs_enseñar.getString("nombre");
+						row[2]=rs_enseñar.getInt("precio");
+						row[3]=rs_enseñar.getInt("unidades");
+						model.addRow(row);	
+
+					}
+					
+				}catch(SQLException e2) {
+					e2.printStackTrace();
+					System.out.println();
+				}
+			}
+		});
 		btnBorrar.setBounds(108, 359, 117, 25);
 		frame.getContentPane().add(btnBorrar);
 		
@@ -138,6 +235,7 @@ public class VentanaPrincipal {
 		frame.getContentPane().add(lblCdigo_1);
 		
 		textFieldCodigoact = new JTextField();
+		textFieldCodigoact.setEditable(false);
 		textFieldCodigoact.setColumns(10);
 		textFieldCodigoact.setBounds(546, 50, 45, 19);
 		frame.getContentPane().add(textFieldCodigoact);
@@ -164,6 +262,7 @@ public class VentanaPrincipal {
 		frame.getContentPane().add(lblCdigo_1_1);
 		
 		textFieldCodunidades = new JTextField();
+		textFieldCodunidades.setEditable(false);
 		textFieldCodunidades.setColumns(10);
 		textFieldCodunidades.setBounds(546, 204, 45, 19);
 		frame.getContentPane().add(textFieldCodunidades);
