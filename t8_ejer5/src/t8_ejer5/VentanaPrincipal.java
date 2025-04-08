@@ -54,6 +54,7 @@ public class VentanaPrincipal {
 	 */
 	private void initialize() {
 		try {
+			System.out.println();
 		Connection con=ConnectionSingleton.getConnection();
 		frame = new JFrame();
 		frame.setBounds(100, 100, 748, 479);
