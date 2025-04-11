@@ -6,6 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.DateTimeException;
+import java.time.LocalDate;
 
 import javax.swing.JFrame;
 import javax.swing.JTable;
@@ -21,6 +23,26 @@ import java.awt.event.MouseEvent;
 
 public class VentanaPrincipal {
 
+	public static void mostrarFilas(Connection con,DefaultTableModel model) {
+		try {
+		Statement enseñar=con.createStatement();
+		ResultSet rs_enseñar=enseñar.executeQuery("Select * From producto");
+		Object row[]=new Object[5];
+		model.setRowCount(0);
+		while(rs_enseñar.next()) {
+			row[0]=rs_enseñar.getInt("codigo");
+			row[1]=rs_enseñar.getString("nombre");
+			row[2]=rs_enseñar.getInt("precio");
+			row[3]=rs_enseñar.getInt("unidades");
+			row[4]=rs_enseñar.getObject("fecha", LocalDate.class);
+			model.addRow(row);	
+
+		}
+		}catch(SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	private JFrame frame;
 	private JTable table;
 	private JTextField textFieldNombre;
@@ -32,6 +54,7 @@ public class VentanaPrincipal {
 	private JTextField textFieldCodunidades;
 	private JTextField textFieldUnidadesact;
 	private JTable table_1;
+	private JTextField textFieldFecha;
 
 	/**
 	 * Launch the application.
@@ -76,6 +99,7 @@ public class VentanaPrincipal {
 		model.addColumn("Nombre");
 		model.addColumn("Precio");
 		model.addColumn("Unidades");
+		model.addColumn("Fecha");
 		
 		table_1 = new JTable(model);
 		table_1.addMouseListener(new MouseAdapter() {
@@ -97,18 +121,7 @@ public class VentanaPrincipal {
 		scrollPane.setBounds(98, 12, 299, 114);
 		frame.getContentPane().add(scrollPane);
 		
-		Statement enseñar=con.createStatement();
-		ResultSet rs_enseñar=enseñar.executeQuery("Select * From producto");
-		Object row[]=new Object[4];
-		
-		while(rs_enseñar.next()) {
-			row[0]=rs_enseñar.getInt("codigo");
-			row[1]=rs_enseñar.getString("nombre");
-			row[2]=rs_enseñar.getInt("precio");
-			row[3]=rs_enseñar.getInt("unidades");
-			model.addRow(row);	
-
-		}
+		VentanaPrincipal.mostrarFilas(con, model);
 		
 		JLabel lblAadirProducto = new JLabel("Añadir producto:");
 		lblAadirProducto.setBounds(95, 152, 124, 15);
@@ -158,18 +171,7 @@ public class VentanaPrincipal {
 				insertar.executeUpdate();
 				JOptionPane.showMessageDialog(frame,"Producto añadido correctamente");
 				
-				Statement enseñar=con.createStatement();
-				ResultSet rs_enseñar=enseñar.executeQuery("Select * From producto");
-				Object row[]=new Object[4];
-				model.setRowCount(0);
-				while(rs_enseñar.next()) {
-					row[0]=rs_enseñar.getInt("codigo");
-					row[1]=rs_enseñar.getString("nombre");
-					row[2]=rs_enseñar.getInt("precio");
-					row[3]=rs_enseñar.getInt("unidades");
-					model.addRow(row);	
-
-				}
+				VentanaPrincipal.mostrarFilas(con, model);
 				
 				
 			}catch(SQLException e1) {
@@ -199,23 +201,14 @@ public class VentanaPrincipal {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				try {
+					
 					int codigo=Integer.parseInt(textFieldCodigo.getText());
 					PreparedStatement borrar=con.prepareStatement("DELETE from producto where codigo = ?");
 					borrar.setInt(1, codigo);
 					borrar.executeUpdate();
 					JOptionPane.showMessageDialog(frame,"Producto borrado correctamente");
-					Statement enseñar=con.createStatement();
-					ResultSet rs_enseñar=enseñar.executeQuery("Select * From producto");
-					Object row[]=new Object[4];
-					model.setRowCount(0);
-					while(rs_enseñar.next()) {
-						row[0]=rs_enseñar.getInt("codigo");
-						row[1]=rs_enseñar.getString("nombre");
-						row[2]=rs_enseñar.getInt("precio");
-						row[3]=rs_enseñar.getInt("unidades");
-						model.addRow(row);	
-
-					}
+					VentanaPrincipal.mostrarFilas(con, model);
+					
 					
 				}catch(SQLException e2) {
 					e2.printStackTrace();
@@ -241,6 +234,25 @@ public class VentanaPrincipal {
 		frame.getContentPane().add(textFieldCodigoact);
 		
 		JButton btnActualizarPrecio = new JButton("Actualizar precio");
+		btnActualizarPrecio.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				try {
+				int codigo=Integer.parseInt(textFieldCodigoact.getText());
+				int precio=Integer.parseInt(textFieldPrecioact.getText());
+				
+				PreparedStatement actualizar=con.prepareStatement("UPDATE producto set precio = ? where codigo = ?");
+				actualizar.setInt(1, precio);
+				actualizar.setInt(2,codigo);
+				actualizar.executeUpdate();
+				JOptionPane.showMessageDialog(frame,"Se ha actualizado correctamente");
+				
+				VentanaPrincipal.mostrarFilas(con, model);
+				}catch(SQLException e3) {
+					e3.printStackTrace();
+				}
+			}
+		});
 		btnActualizarPrecio.setBounds(477, 127, 174, 25);
 		frame.getContentPane().add(btnActualizarPrecio);
 		
@@ -276,9 +288,43 @@ public class VentanaPrincipal {
 		textFieldUnidadesact.setBounds(546, 238, 45, 19);
 		frame.getContentPane().add(textFieldUnidadesact);
 		
+		textFieldFecha = new JTextField();
+		textFieldFecha.setBounds(546, 265, 132, 19);
+		frame.getContentPane().add(textFieldFecha);
+		textFieldFecha.setColumns(10);
+		
 		JButton btnActualizarUnidades = new JButton("Actualizar");
-		btnActualizarUnidades.setBounds(477, 267, 117, 25);
+		btnActualizarUnidades.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				try {
+					try {
+					int codigo=Integer.parseInt(textFieldCodunidades.getText());
+					int unidades=Integer.parseInt(textFieldUnidadesact.getText());
+					LocalDate fecha=LocalDate.parse(textFieldFecha.getText());
+					PreparedStatement actualizar=con.prepareStatement("UPDATE producto set unidades = ?, fecha = ? where codigo = ?");
+					actualizar.setInt(1, unidades);
+					actualizar.setObject(2, fecha);
+					actualizar.setInt(3,codigo);
+					actualizar.executeUpdate();
+					JOptionPane.showMessageDialog(frame,"Se ha actualizado correctamente");
+					
+					VentanaPrincipal.mostrarFilas(con, model);
+					}catch(DateTimeException fecha) {
+						JOptionPane.showMessageDialog(frame, "Fecha incorrecta formato AAAA-MM-DD");
+					}
+					}catch(SQLException e4) {
+						e4.printStackTrace();
+					}
+			}
+		});
+		btnActualizarUnidades.setBounds(474, 341, 117, 25);
 		frame.getContentPane().add(btnActualizarUnidades);
+		
+		JLabel lblFecha = new JLabel("Fecha");
+		lblFecha.setBounds(473, 267, 56, 15);
+		frame.getContentPane().add(lblFecha);
+		
 		
 		}catch(SQLException e) {
 			e.printStackTrace();
